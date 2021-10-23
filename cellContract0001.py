@@ -8,23 +8,23 @@ import math
 
 # --------- IMPORTANT -------------------------------------
 
-# Body starts with an initial_shear, will be tilted so that the top advances in small steps of length steps_length until 
-# it reaches max_shear. From there, it wil "deshear" until reaching final_shear in case hysteresis is intended
+# Body starts with an initial_contraction, will be tilted so that the top advances in small steps of length steps_length until 
+# it reaches max_contraction. From there, it wil "decontraction" until reaching final_contraction in case hysteresis is intended
 
 
-# -------- Shear values -----------------------------
+# -------- Contraction values -----------------------------
 
-initial_shear = 0.04 # this is tan theta (theata is the angle between the lateral side at the beginning and the same side at the end)
-max_shear = 0.25 # TOP side will be displaced a (max_shearx100)% from the initial position
-final_shear = 0.04 # Final shear after deshearing the body
+initial_contraction = 0.001 # this is tan theta (theata is the angle between the lateral side at the beginning and the same side at the end)
+max_contraction = -0.20 # TOP side will be displaced a (max_contractionx100)% from the initial position
+#final_contraction = 0.04 # Final contraction after decontractioning the body
 
-step_length = 0.0001 # Shear right and deshear left will happen in small steps. Shear for step N+1 has shear of step N as initial guess
+step_length = 0.005 # Contraction right and decontraction left will happen in small steps. Contraction for step N+1 has contraction of step N as initial guess
 
 print_Niter = 1
 
-resolution = 20
+resolution = 40
 
-uc0 = -0.20 # uniform radial displacement, - gives contraction, + gives expansion 
+#uc0 = -0.20 # uniform radial displacement, - gives contraction, + gives expansion 
 ###u0 can also be a vector, i.e. [a, b] for some a and b,  or an expression.
 
 my_k = 10 # Value of the constant k
@@ -39,7 +39,7 @@ el_order = 1
 # ---------- Management of number of graphics -----------
 
 number_images = 5
-image_frequency = math.ceil((max_shear - final_shear)/(step_length*number_images))
+image_frequency = math.ceil((max_contraction - initial_contraction)/(step_length*number_images))
 
 # ---------- end of graphic management ---------
 
@@ -56,28 +56,28 @@ right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1)
 # The cell
 
 #c_x, c_y, rho = 0.5, 0.5, 0.3 # center and radius of a big cirlce (The ECM)  NO EN MI CASO
-c1_x, c1_y, i_rho1 = 0.5, 0.5, 0.34    # center and radius of a cell
+c1_x, c1_y, i_rho1 = 0.5, 0.5, 0.40    # center and radius of a cell
 
 # cell_domain = CircularDomain(i_rho1, c1_x, c1_y) # creates a circle with radius rho and center at (c_x, c_y), 0 indicates that
 # the outer boundary is fixed
 # cell_domain =CircularDomain(i_rho1, c1_x, c1_y) # here the outer boundary is free
-cell_domain = CircularDomain(i_rho1, c1_x, c1_y, uc0) # uc0 is the restriction over the cell boundary, for example a contraction
+cell_domain = CircularDomain(i_rho1, c1_x, c1_y, initial_contraction) # uc0 is the restriction over the cell boundary, for example a contraction
 
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 b = Expression(("0.0",
-                "0.0"),pr = initial_shear, degree = 2)
-t = Expression(("1*pr",
+                "0.0"),pr = initial_contraction, degree = 2)
+t = Expression(("0.0",
                 "0.0"),
-                pr = initial_shear, degree = 2)
+                pr = initial_contraction, degree = 2)
 
-l = Expression(("pr*x[1]",
+l = Expression(("0.0",
                 "0.0"),
-                pr = initial_shear, degree = 2)
+                pr = initial_contraction, degree = 2)
 
-r = Expression(("pr*x[1]",
+r = Expression(("0.0",
                 "0.0"),
-                pr = initial_shear, degree = 2)
+                pr = initial_contraction, degree = 2)
 
 
 domain = RectangularDomain(0, 0, 1, 1, [ [b,bottom], [l,left], [r,right], [t, top]], isMeshUniform = False) #isMeshUnifor default value is "False". When "True" the area of all triangles in the original mesh are equal. Otherwise triangles ares are as better fit.
@@ -126,48 +126,49 @@ except:
 
 energies = np.load("results/vtkFiles/saved_functions/energy_i.npy", "r") #opens the file where energies are stored
 
-energyVsShear = open("results/vtkFiles/saved_functions/EnergyVsShear.csv", "w") 
+energyVsContraction = open("results/vtkFiles/saved_functions/EnergyVsContraction.csv", "w") 
 
-last_line1st = energies[-2] # last energy
-energyVsShear.write(str(initial_shear)+','+str(last_line1st)+'\n')
+last_line1st = energies[-2] # last energy that is 100x100 =/= 0
+energyVsContraction.write(str(initial_contraction)+','+str(last_line1st)+'\n')
 
 # -------------Ends files management -----------------
 
 # ---------------- solving Ends -----------------------------------------
 
+"""
 count = 1
 
-# ------------------- loop begins (shear) ---------------------
+# ------------------- loop begins (contraction) ---------------------
 
 
 
-while (initial_shear < max_shear):
+while (initial_contraction < max_contraction):
 
     u_0 = u
     count = count + 1
-    shear = initial_shear + step_length
-    initial_shear = shear
+    contraction = initial_contraction + step_length
+    initial_contraction = contraction
 
 
     print('---------------------------------')
     print '------------- PASO', count, '------------'
-    print '        Shear', shear
+    print '        Contraction:', contration
     print('---------------------------------')
 
     # Define Dirichlet boundary (y = 0 or y = 1)
     b = Expression(("0.0",
-                    "0.0"),pr = initial_shear, degree = 2)
-    t = Expression(("1*pr",
+                    "0.0"),pr = initial_contraction, degree = 2)
+    t = Expression(("0.0",
                     "0.0"),
-                    pr = initial_shear, degree = 2)
+                    pr = initial_contraction, degree = 2)
 
-    l = Expression(("pr*x[1]",
+    l = Expression(("0.0",
                     "0.0"),
-                    pr = initial_shear, degree = 2)
+                    pr = initial_contraction, degree = 2)
 
-    r = Expression(("pr*x[1]",
+    r = Expression(("0.0",
                     "0.0"),
-                    pr = initial_shear, degree = 2)
+                    pr = initial_contraction, degree = 2)
 
     domain = RectangularDomain(0, 0, 1, 1, [ [b,bottom], [l,left], [r,right], [t, top]], isMeshUniform = False)
 
@@ -197,7 +198,7 @@ while (initial_shear < max_shear):
 
     if count % image_frequency == 0:
         solver.plot_results()
-        file_number=str(shear)
+        file_number = str(contraction)
         os.rename(r'results/vtkFiles/u.pvd',r"results/vtkFiles/u_c_"+file_number+".pvd")
         os.rename(r'results/vtkFiles/detF.pvd',r"results/vtkFiles/detF_c_"+file_number+".pvd")
         os.rename(r'results/vtkFiles/dens.pvd',r"results/vtkFiles/dens_c_"+file_number+".pvd")
@@ -208,47 +209,50 @@ while (initial_shear < max_shear):
     energies = np.load("results/vtkFiles/saved_functions/energy_i.npy", "r") #opens the file where energies are stored
 
     last_line1st = energies[-2] # last energy
-    energyVsShear.write(str(initial_shear)+','+str(last_line1st)+'\n')
+    energyVsContraction.write(str(initial_contraction)+','+str(last_line1st)+'\n')
 
 
 # ------------------- loop ends -----------------------
 
+"""
 
 count = 0
 
-# ------------------- 2nd loop begins (deshear) ---------------------
 
-while (final_shear < initial_shear):
+# ------------------- 2nd loop begins (decontraction) ---------------------
+
+while (max_contraction < initial_contraction):
 
     u_0 = u
     count = count + 1
-    shear = initial_shear - step_length
-    initial_shear = shear
+    contraction = initial_contraction - step_length
+    initial_contraction = contraction
+    cell_domain = CircularDomain(i_rho1, c1_x, c1_y, initial_contraction) # uc0 is the restriction over the cell boundary, for example a contraction
 
 
     print('---------------------------------')
-    print '------------- PASO', count, 'B  ------------'
-    print '        Shear', shear
+    print '------------- PASO', count, '  ------------'
+    print '        Radio', i_rho1 + contraction
     print('---------------------------------')
 
     # Define Dirichlet boundary (y = 0 or y = 1)
     b = Expression(("0.0",
-                    "0.0"),pr = initial_shear, degree = 2)
-    t = Expression(("1*pr",
+                    "0.0"),pr = initial_contraction, degree = 2)
+    t = Expression(("0.0",
                     "0.0"),
-                    pr = initial_shear, degree = 2)
+                    pr = initial_contraction, degree = 2)
 
-    l = Expression(("pr*x[1]",
+    l = Expression(("0.0",
                     "0.0"),
-                    pr = initial_shear, degree = 2)
+                    pr = initial_contraction, degree = 2)
 
-    r = Expression(("pr*x[1]",
+    r = Expression(("0.0",
                     "0.0"),
-                    pr = initial_shear, degree = 2)
+                    pr = initial_contraction, degree = 2)
 
     domain = RectangularDomain(0, 0, 1, 1, [ [b,bottom], [l,left], [r,right], [t, top]], isMeshUniform = False)
 
-    domain.remove_subdomain(cell_domain )
+    domain.remove_subdomain(cell_domain)
 
     domain.create_mesh(resolution) # create a mesh over the domain for the given resolution
 
@@ -274,7 +278,7 @@ while (final_shear < initial_shear):
 
     if count % image_frequency == 0:
         solver.plot_results()
-        file_number=str(shear)
+        file_number=str(i_rho1 + contraction)
         os.rename(r'results/vtkFiles/u.pvd',r"results/vtkFiles/u_d_"+file_number+".pvd")
         os.rename(r'results/vtkFiles/detF.pvd',r"results/vtkFiles/detF_d_"+file_number+".pvd")
         os.rename(r'results/vtkFiles/dens.pvd',r"results/vtkFiles/dens_d_"+file_number+".pvd")
@@ -285,16 +289,17 @@ while (final_shear < initial_shear):
     energies = np.load("results/vtkFiles/saved_functions/energy_i.npy", "r") #opens the file where energies are stored
 
     last_line1st = energies[-2] # last energy
-    energyVsShear.write(str(initial_shear)+','+str(last_line1st)+'\n')
+    energyVsContraction.write(str(initial_contraction)+','+str(last_line1st)+'\n')
 
 
 # ------------------- loop ends -----------------------
+
 
 solver.plot_results()
 
 
 """
-energyVsShear.close()
+energyVsContraction.close()
 
 solver.plot_results()
 try:
